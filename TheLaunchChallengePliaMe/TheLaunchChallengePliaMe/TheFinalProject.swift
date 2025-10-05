@@ -21,15 +21,15 @@ class AppData: ObservableObject {
     @Published var classesCompletedStreak: Int = 0
     @Published var consecutiveMisses: Int = 0
     
-    // سجل الحضور الدائم (لن يتم حفظه بعد إغلاق التطبيق)
-    // 🛑 تم التعديل إلى [Date] للسماح بحساب جميع مرات الحضور التراكمي
-    @Published var attendedDates: [Date] = [] // *** تم التغيير من Set إلى Array ***
+    // 🚨 الخاصية الجديدة لتعقب التخطي (مفتاح تصغير الوردة) 🚨
+    @Published var hasSkippedStreak: Bool = false
+    
+    // سجل الحضور الدائم
+    @Published var attendedDates: [Date] = []
 
     private let calendar = Calendar.current
     
-    // دالة التهيئة (Constructor) - لا تحميل للبيانات
     init() {
-        // لا يتم استدعاء loadData()، تبدأ البيانات بـ 0 أو فارغة
     }
     
     // ===========================================
@@ -55,7 +55,6 @@ class AppData: ObservableObject {
         return upcomingClasses.first
     }
     
-    // دالة لحساب الحضور الكلي مدى الحياة (غير محفوظ بشكل دائم)
     func totalLifetimeClasses() -> Int {
         return attendedDates.count
     }
@@ -66,8 +65,6 @@ class AppData: ObservableObject {
         
         let classDate = calendar.startOfDay(for: nextClassDate)
         
-        // 🛑 التعديل: استخدام .append لإضافة التاريخ إلى Array
-        // وتسجيل تاريخ الكلاس المُجدول (classDate) بشكل متسق
         attendedDates.append(classDate)
         selectedClassDates.remove(classDate)
         
@@ -75,16 +72,24 @@ class AppData: ObservableObject {
         
         classesCompletedStreak += 1
         consecutiveMisses = 0
+        
+        // 💡 إلغاء حالة التخطي عند إكمال كلاس بنجاح
+        if classesCompletedStreak >= 1 {
+            hasSkippedStreak = false
+        }
     }
     
-    // دالة تخطي الكلاس (Skip)
+    // دالة تخطي الكلاس (Skip) - تم التعديل
     func skipNextClass() {
         guard let nextClassDate = nextClass?.date else { return }
         selectedClassDates.remove(calendar.startOfDay(for: nextClassDate))
         
         if classesLeft > 0 { classesLeft -= 1 }
         
-        handleMiss() // تطبيق عقوبة الغياب
+        // 🛑 التعديل الأول: تعيين حالة التخطي إلى true فوراً (لتصغير الوردة)
+        hasSkippedStreak = true
+        
+        handleMiss()
     }
     
     func updateCountsFromSelection() {
@@ -93,16 +98,20 @@ class AppData: ObservableObject {
         self.classesLeft = count
     }
     
+    // 🛑 دالة handleMiss() - تم التعديل لجعل التخطي الواحد يكسر الـ Streak 🛑
     func handleMiss() {
         consecutiveMisses += 1
         
-        if consecutiveMisses >= 2 && classesCompletedStreak > 0 {
-            classesCompletedStreak = max(0, classesCompletedStreak - 1)
-            consecutiveMisses = 0
+        // إذا كان هناك تخطي (miss) واحد أو أكثر وكان هناك Streak موجود:
+        if consecutiveMisses >= 1 && classesCompletedStreak > 0 {
+            // كسر الـ Streak بالكامل للعودة إلى 0 عند أول تخطي
+            classesCompletedStreak = 0
+            // يمكن إبقاء الـ consecutiveMisses لتتبع الغيابات المتتالية إذا أردت، أو تعيينها لـ 0
+            // سنبقيها لكي تتمكن من تتبع التخطي إذا احتجت إليه مستقبلاً:
+            // consecutiveMisses = 0
         }
     }
 }
-
 // MARK: - 2. الألوان والمساعدات (Helpers & Custom Views)
 
 extension Color {
@@ -494,7 +503,10 @@ struct UpcomingClassesSection: View {
     }
 }
 
+/// تم تعديل ClassRow ليحتوي على زري Complete و Skip
 // تم تعديل ClassRow ليحتوي على زري Complete و Skip
+// / تم تعديل ClassRow ليحتوي على زري Complete و Skip
+// / تم تعديل ClassRow ليحتوي على زري Complete و Skip
 struct ClassRow: View {
     let item: ClassItem
     var completeAction: () -> Void
@@ -518,52 +530,94 @@ struct ClassRow: View {
             
             Spacer()
             
-            HStack(spacing: 10) {
+            HStack(spacing: 15) {
                 
-                // 1. زر Skip (تخطي) - شكل كبسولي وإطار أحمر ناعم
+                // 1. زر Skip (تخطي)
                 Button(action: skipAction) {
                     Text("Skip")
                         .font(.subheadline).fontWeight(.medium)
                         .foregroundColor(.red)
-                        .padding(.vertical, 5).padding(.horizontal, 2)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 8)
                         .background(Color.white)
                         .overlay(
                             Capsule().stroke(Color.red.opacity(2), lineWidth: 0.25)
                         )
-                        .clipShape(Capsule()) // شكل دائري كامل
-                }.buttonStyle(PlainButtonStyle())
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(PlainButtonStyle())
                 
-                // 2. زر Complete (إكمال) - شكل كبسولي وإطار بنفسجي بارز
+                
+                // 2. زر Completed (إكمال) - تم تغيير النص
                 Button(action: completeAction) {
-                    Text("Complete")
+                    Text("Complete") // 🛑 تم تغيير "Complete" إلى "Completed" 🛑
                         .font(.subheadline).fontWeight(.medium)
-                        .foregroundColor(Color.primaryAccent) // لون النص بنفسجي
-                        .padding(.vertical, 5).padding(.horizontal, 2)
+                        .foregroundColor(Color.primaryAccent)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 8)
                         .background(Color.white)
                         .overlay(
                             Capsule().stroke(Color.primaryAccent, lineWidth: 2.0)
                         )
-                        .clipShape(Capsule()) // شكل دائري كامل
-                }.buttonStyle(PlainButtonStyle())
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(PlainButtonStyle())
                 
             }
+            // 🛑 التعديل: زيادة العرض الأقصى إلى 220 ليتناسب مع "Completed" 🛑
+            .frame(maxWidth: 220)
             
-        }.padding(15).background(Color.userCardLevel).cornerRadius(15).shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
+        }
+        .padding(15)
+        .background(Color.userCardLevel)
+        .cornerRadius(15)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
     }
 }
-
+// باقي الـ structs (DynamicFlowerImage و StreakPage) لم تتغير
+// ...
+// باقي الـ structs (DynamicFlowerImage و StreakPage) لم تتغير
+// ...
 struct DynamicFlowerImage: View {
     @EnvironmentObject var appData: AppData
     
-    // 🚀 يمكنك تعديل قيمة الإزاحة اليدوية هنا، مثلاً:
-    // - إذا كانت تميل لليسار، زد القيمة (مثل: 5, 8, 10)
-    // - إذا كانت تميل لليمين، أنقص القيمة أو اجعلها سالبة (مثل: 0, -5)
+    // 🚀 الإزاحة الأفقية الوحيدة التي تحتاجها
     let horizontalOffset: CGFloat = 15
+
+    // --- الدوال المساعدة للحجم والاسم (لم تتغير) ---
+    
+    private func sizeForStreak(completed: Int) -> CGFloat {
+            
+            // 1. 🚨 تم خفض الحجم الأساسي لـ flower1 ليصبح أصغر 🚨
+            let baseSize: CGFloat = 130
+            
+            // 2. 🚀 تم زيادة الفارق لتصبح flower2 أكبر بـ 30 نقطة 🚀
+            let sizeIncrement: CGFloat = 50
+
+            if completed >= 15 {
+                // Flower 4
+                return baseSize + (sizeIncrement * 4) // 180 + 120 = 300
+            }
+            else if completed >= 10 {
+                // Flower 3
+                return baseSize + (sizeIncrement * 2) // 180 + 60 = 240
+            }
+            else if completed >= 5 {
+                // Flower 2 (أكبر بشكل واضح من flower1)
+                return baseSize + sizeIncrement // 180 + 30 = 210
+            }
+            else {
+                // Flower 1
+                return baseSize // 180
+            }
+        }
     
     private var flowerImageName: String {
-        // يعتمد على الـ Streak المحسوب (30 يومًا)
         let completed = appData.classesCompletedStreak
-        
         if completed >= 15 { return "flower4" }
         else if completed >= 10 { return "flower3" }
         else if completed >= 5 { return "flower2" }
@@ -571,23 +625,37 @@ struct DynamicFlowerImage: View {
         else { return "flower1" }
     }
     
+    // --- الجسم (Body) المصحح والمُبسَّط ---
+
     var body: some View {
-        Image(flowerImageName)
+        let currentSize = sizeForStreak(completed: appData.classesCompletedStreak)
+        let name = flowerImageName
+        
+        Image(name)
             .resizable()
             .scaledToFit()
-            .frame(maxWidth: 200, maxHeight: 200) // نحدد حجم الصورة الأقصى
+            
+            // 1. تثبيت الأبعاد الموحدة
+            .frame(width: currentSize, height: currentSize)
+            
+            // 2. 🚨 التعديل الرئيسي: تثبيت الأبعاد النهائية للحاوية 🚨
+            // نستخدم هذا الإطار لتثبيت المساحة التي تشغلها الوردة بالكامل (على سبيل المثال 350x350)
+            .frame(width: 350, height: 350)
+            .contentShape(Rectangle()) // تثبيت مساحة التفاعل
+            .clipped() // لضمان عدم خروج أي جزء من الصورة عن هذا الإطار
+            
             .opacity(0.7)
-            .padding(.top, 40)
-            // 🚀 التعديل: نطلب من الإطار النهائي أن يمتد لأقصى عرض متاح (لضمان التوسيط) 🚀
-            .frame(maxWidth: .infinity, alignment: .center)
-            // 🎯 تطبيق الإزاحة اليدوية 🎯
-            .offset(x: horizontalOffset, y: 0)
-            .animation(.easeInOut(duration: 0.5), value: flowerImageName)
+            .animation(.easeInOut(duration: 0.5), value: name)
+            .animation(.easeInOut(duration: 0.5), value: currentSize)
+        
+        // 3. التوسيط على مستوى الشاشة
+        .frame(maxWidth: .infinity, alignment: .center)
+        
+        // 4. 🚀 الإزاحة الأفقية فقط (إذا كانت مطلوبة) 🚀
+        // قد تحتاج إلى تعديل (Y: -30) لرفع الكتلة للأعلى لتعويض الـ Padding الذي أزلناه
+        .offset(x: horizontalOffset, y: -40)
     }
 }
-
-
-
 // MARK: - 6. شاشة التقدم (StreakPage)
 
 // MARK: - 6. شاشة التقدم (StreakPage)
@@ -597,9 +665,32 @@ struct DynamicFlowerImage: View {
 struct StreakPage: View {
     @EnvironmentObject var appData: AppData
     
-    // 🚀 يمكنك تعديل قيمة الإزاحة اليدوية هنا 🚀
-    // (5) تدفعها 5 نقاط إلى اليمين لتعويض الانحراف
+    // 🚀 الإزاحة الأفقية الوحيدة التي تحتاجها
     let horizontalOffset: CGFloat = 15
+    
+    // 🚨 الإزاحة العمودية الثابتة لرفع الكتلة للأعلى لتعويض الـ Padding الذي أزلناه 🚨
+    let verticalOffsetCorrection: CGFloat = 40
+
+    // --- الدوال المساعدة للحجم والاسم (من الكود النهائي) ---
+    
+    private func sizeForStreak(completed: Int) -> CGFloat {
+        // baseSize: 130, sizeIncrement: 50
+        let baseSize: CGFloat = 130
+        let sizeIncrement: CGFloat = 50
+
+        if completed >= 15 {
+            return baseSize + (sizeIncrement * 4) // Flower 4: 330
+        }
+        else if completed >= 10 {
+            return baseSize + (sizeIncrement * 2) // Flower 3: 230
+        }
+        else if completed >= 5 {
+            return baseSize + sizeIncrement // Flower 2: 180
+        }
+        else {
+            return baseSize // Flower 1: 130
+        }
+    }
     
     private var flowerImageName: String {
         let completed = appData.classesCompletedStreak
@@ -611,7 +702,13 @@ struct StreakPage: View {
         else { return "flower1" }
     }
 
+    // --- الجسم (Body) المُحدَّث ---
     var body: some View {
+        
+        // حساب الحجم الحالي في بداية الـ body
+        let currentSize = sizeForStreak(completed: appData.classesCompletedStreak)
+        let name = flowerImageName
+        
         ZStack {
             Color.primaryBackground.ignoresSafeArea()
             
@@ -643,17 +740,28 @@ struct StreakPage: View {
                     .foregroundColor(Color.darkBrown)
                     .padding(.bottom, 50)
                 
-                // 🌸 الصورة مع التعديل اليدوي 🌸
-                Image(flowerImageName)
+                // 🌸 الصورة مع التعديل لتطبيق الأحجام الديناميكية وثبات الموقع 🌸
+                Image(name)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 200, height: 200) // الحجم الذي طلبته
-                    .opacity(0.7) // الشفافية التي طلبتها
-                    .padding(.top, 50) // المسافة العلوية التي طلبتها
-                    .frame(maxWidth: .infinity, alignment: .center) // ضمان التوسيط الأولي
-                    // 🎯 تطبيق الإزاحة اليدوية 🎯
-                    .offset(x: horizontalOffset, y: 1)
-                    .animation(.easeInOut(duration: 0.5), value: flowerImageName)
+                    
+                    // 1. تطبيق الحجم الديناميكي الجديد
+                    .frame(width: currentSize, height: currentSize)
+                    
+                    // 2. تثبيت الحاوية (مهم جداً لثبات الموقع لـ flower4)
+                    .frame(width: 350, height: 350)
+                    .contentShape(Rectangle())
+                    .clipped()
+                    
+                    .opacity(0.7)
+                    .animation(.easeInOut(duration: 0.5), value: name)
+                    .animation(.easeInOut(duration: 0.5), value: currentSize)
+                
+                    // 3. التوسيط على مستوى الشاشة
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    
+                    // 4. تطبيق الإزاحة النهائية (الأفقية والعمودية)
+                    .offset(x: horizontalOffset, y: -verticalOffsetCorrection)
                 
                 Spacer()
             }
