@@ -555,6 +555,11 @@ struct ClassRow: View {
 struct DynamicFlowerImage: View {
     @EnvironmentObject var appData: AppData
     
+    // 🚀 يمكنك تعديل قيمة الإزاحة اليدوية هنا، مثلاً:
+    // - إذا كانت تميل لليسار، زد القيمة (مثل: 5, 8, 10)
+    // - إذا كانت تميل لليمين، أنقص القيمة أو اجعلها سالبة (مثل: 0, -5)
+    let horizontalOffset: CGFloat = 15
+    
     private var flowerImageName: String {
         // يعتمد على الـ Streak المحسوب (30 يومًا)
         let completed = appData.classesCompletedStreak
@@ -570,14 +575,20 @@ struct DynamicFlowerImage: View {
         Image(flowerImageName)
             .resizable()
             .scaledToFit()
-            .frame(width: 150, height: 150)
+            .frame(maxWidth: 200, maxHeight: 200) // نحدد حجم الصورة الأقصى
             .opacity(0.7)
             .padding(.top, 40)
+            // 🚀 التعديل: نطلب من الإطار النهائي أن يمتد لأقصى عرض متاح (لضمان التوسيط) 🚀
             .frame(maxWidth: .infinity, alignment: .center)
+            // 🎯 تطبيق الإزاحة اليدوية 🎯
+            .offset(x: horizontalOffset, y: 0)
             .animation(.easeInOut(duration: 0.5), value: flowerImageName)
     }
 }
 
+
+
+// MARK: - 6. شاشة التقدم (StreakPage)
 
 // MARK: - 6. شاشة التقدم (StreakPage)
 
@@ -585,6 +596,10 @@ struct DynamicFlowerImage: View {
 
 struct StreakPage: View {
     @EnvironmentObject var appData: AppData
+    
+    // 🚀 يمكنك تعديل قيمة الإزاحة اليدوية هنا 🚀
+    // (5) تدفعها 5 نقاط إلى اليمين لتعويض الانحراف
+    let horizontalOffset: CGFloat = 15
     
     private var flowerImageName: String {
         let completed = appData.classesCompletedStreak
@@ -608,21 +623,19 @@ struct StreakPage: View {
                     .foregroundColor(Color.darkBrown)
                     .padding(.bottom, 30)
                 
-                // 🚀 التصميم الجديد للدائرة والعداد 🚀
+                // الدائرة والعداد
                 ZStack {
                     Circle()
                         .fill(Color.customBackground)
-                        // إضافة إطار خفيف وظل للدائرة لإبرازها
                         .overlay(Circle().stroke(Color.darkBrown.opacity(0.1), lineWidth: 1))
                         .shadow(color: Color.darkBrown.opacity(0.2), radius: 5, x: 0, y: 0)
                     
-                    // 🛑 عرض عدد الحضور الكلي مدى الحياة 🛑
                     Text("\(appData.totalLifetimeClasses())")
-                        .font(.system(size: 60, weight: .heavy)) // تم تكبير حجم ووزن الخط
+                        .font(.system(size: 60, weight: .heavy))
                         .foregroundColor(Color.darkBrown)
-                        .shadow(color: Color.black.opacity(0.15), radius: 3, x: 1, y: 1) // إضافة ظل للرقم
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, x: 1, y: 1)
                 }
-                .frame(width: 180, height: 180) // تم زيادة حجم الدائرة لتناسب الرقم الأكبر
+                .frame(width: 180, height: 180)
                 .padding(.bottom, 30)
 
                 Text("classes")
@@ -630,16 +643,19 @@ struct StreakPage: View {
                     .foregroundColor(Color.darkBrown)
                     .padding(.bottom, 50)
                 
+                // 🌸 الصورة مع التعديل اليدوي 🌸
                 Image(flowerImageName)
                     .resizable()
                     .scaledToFit()
-                    // 🗑️ تم إزالة .frame(maxWidth: 280) القديمة
-                    .frame(maxWidth: 150, maxHeight: 150) // تثبيت حجم الزهرة نفسها
-                    .opacity(0.9)
-                    // ✅ ضمان توسيط الزهرة في المساحة الأفقية المتبقية
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, 100)
-                    .animation(.easeInOut(duration: 1.5), value: flowerImageName)
+                    .frame(width: 200, height: 200) // الحجم الذي طلبته
+                    .opacity(0.7) // الشفافية التي طلبتها
+                    .padding(.top, 50) // المسافة العلوية التي طلبتها
+                    .frame(maxWidth: .infinity, alignment: .center) // ضمان التوسيط الأولي
+                    // 🎯 تطبيق الإزاحة اليدوية 🎯
+                    .offset(x: horizontalOffset, y: 1)
+                    .animation(.easeInOut(duration: 0.5), value: flowerImageName)
+                
+                Spacer()
             }
             .padding(.horizontal)
             .navigationTitle("Your Streak")
