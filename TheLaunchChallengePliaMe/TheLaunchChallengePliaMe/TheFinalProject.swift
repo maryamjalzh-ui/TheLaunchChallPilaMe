@@ -779,7 +779,7 @@ struct AddClassesUIView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             // 💡 استخدام لون خلفية فاتح بديل للزر 💡
-                            .background(Color.customBackground)
+                            .background(Color.primaryBackground) // تم التغيير إلى primaryBackground
                             .cornerRadius(10)
                         }
                         .opacity(appData.selectedClassDates.isEmpty ? 0 : 1)
@@ -790,7 +790,7 @@ struct AddClassesUIView: View {
                 }
                 .padding(.vertical, 25)
                 // 💡 استخدام خلفية فاتحة لبطاقة التقويم 💡
-                .background(Color.customBackground)
+                .background(Color.primaryBackground) // تم التغيير إلى primaryBackground
                 .cornerRadius(30)
                 .padding(.horizontal, 20)
                 .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 10)
@@ -889,6 +889,7 @@ struct MonthNavigationHeader: View {
         .padding(.horizontal, 15)
     }
 }
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
