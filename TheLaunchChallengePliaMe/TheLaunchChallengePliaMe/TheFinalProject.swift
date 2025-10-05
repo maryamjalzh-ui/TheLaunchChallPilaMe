@@ -192,7 +192,7 @@ struct MainAppRootView: View {
 struct LevelSelectionView: View {
     @AppStorage("selectedLevel") private var selectedLevel = ""
     private let backgroundColor = Color.primaryBackground
-    private let imageSize:  CGFloat = 115
+    private let imageSize: CGFloat = 115
     private let imageRightPadding: CGFloat = 12
 
     var body: some View {
@@ -213,10 +213,14 @@ struct LevelSelectionView: View {
                     Image(systemName: "arrow.right").font(.system(size: 22, weight: .bold)).foregroundStyle(.black).padding(14).background(Color.white).clipShape(Circle()).shadow(color: .black.opacity(0.15), radius: 6, y: 3)
                 }.disabled(selectedLevel.isEmpty).opacity(selectedLevel.isEmpty ? 0.4 : 1.0)
             }
-        }.padding(24).background(backgroundColor.ignoresSafeArea())
+        }
+        // 💡 التعديل الذي يحل المشكلة: مسح الاختيار عند ظهور الشاشة
+        .onAppear {
+             selectedLevel = ""
+        }
+        .padding(24).background(backgroundColor.ignoresSafeArea())
     }
 }
-
 // شاشة اختيار الهدف
 struct ObjectiveSelectionView: View {
     @AppStorage("selectedObjective") private var selectedObjective = ""
