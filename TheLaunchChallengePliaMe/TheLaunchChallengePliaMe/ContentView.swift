@@ -1,24 +1,21 @@
-//
-//  ContentView.swift
-//  TheLaunchChallengePliaMe
-//
-//  Created by Maryam Jalal Alzahrani on 09/04/1447 AH.
-//
 
+//
+// ContentView.swift
+// يحتوي على: struct ContentView
+// الوظيفة: نقطة البداية التي تقوم بإنشاء AppData وNavigationStack
+//
 import SwiftUI
 
 struct ContentView: View {
+    // إنشاء AppData مرة واحدة وتمريرها عبر البيئة
+    @StateObject var appData = AppData()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            // يبدأ من شاشة البداية
+            SplashScreenUIView()
         }
-        .padding()
+        // يجعل AppData متاحاً لجميع المشاهدات الفرعية
+        .environmentObject(appData)
     }
-}
-
-#Preview {
-    ContentView()
 }
