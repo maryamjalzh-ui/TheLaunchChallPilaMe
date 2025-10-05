@@ -10,7 +10,7 @@ struct ClassItem: Identifiable {
     let date: Date
 }
 
-// الكلاس المحدَّث (بدون حفظ)
+// الكلاس المحدَّث
 class AppData: ObservableObject {
     
     @Published var selectedClassDates: Set<Date> = Set()
@@ -22,7 +22,8 @@ class AppData: ObservableObject {
     @Published var consecutiveMisses: Int = 0
     
     // سجل الحضور الدائم (لن يتم حفظه بعد إغلاق التطبيق)
-    @Published var attendedDates: Set<Date> = Set()
+    // 🛑 تم التعديل إلى [Date] للسماح بحساب جميع مرات الحضور التراكمي
+    @Published var attendedDates: [Date] = [] // *** تم التغيير من Set إلى Array ***
 
     private let calendar = Calendar.current
     
@@ -63,14 +64,15 @@ class AppData: ObservableObject {
     func completeNextClass() {
         guard let nextClassDate = nextClass?.date else { return }
         
-        attendedDates.insert(calendar.startOfDay(for: Date()))
-        selectedClassDates.remove(calendar.startOfDay(for: nextClassDate))
+        let classDate = calendar.startOfDay(for: nextClassDate)
+        
+        // 🛑 التعديل: استخدام .append لإضافة التاريخ إلى Array
+        // وتسجيل تاريخ الكلاس المُجدول (classDate) بشكل متسق
+        attendedDates.append(classDate)
+        selectedClassDates.remove(classDate)
         
         if classesLeft > 0 { classesLeft -= 1 }
         
-        // هنا تم استخدام الـ Streak كـ computed property (قيمة محسوبة)
-        // إذا كنت تريد أن يكون الحساب تراكمي بسيط، يجب حفظه، لكن الطلب هو عدم الحفظ
-        // سنبقي logic الـ Streak كما كان سابقًا كـ @Published Int لتجنب التعقيد في هذه اللحظة.
         classesCompletedStreak += 1
         consecutiveMisses = 0
     }
@@ -188,7 +190,7 @@ struct LevelSelectionView: View {
         VStack(spacing: 24) {
             Text("Your Level").font(.system(.largeTitle, design: .serif)).navigationTitle("").navigationBarTitleDisplayMode(.inline)
             
-            baseCard(title: "Flow easy", isSelected: selectedLevel == "Flow easy", onTap: { selectedLevel = "Flow easy" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("flow").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
+            baseCard(title: "Flow Easy", isSelected: selectedLevel == "Flow Easy", onTap: { selectedLevel = "Flow Easy" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("flow").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
             baseCard(title: "Core Active", isSelected: selectedLevel == "Core Active", onTap: { selectedLevel = "Core Active" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("core").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
             baseCard(title: "Power Sculpt", isSelected: selectedLevel == "Power Sculpt", onTap: { selectedLevel = "Power Sculpt" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("power").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
 
@@ -406,7 +408,7 @@ struct MainPageUIview: View {
 struct HeaderView: View {
     var body: some View {
         HStack {
-            Text("Hello, Yara!").font(.largeTitle).fontWeight(.bold).foregroundColor(Color.darkBrown)
+            Text("Hello!").font(.largeTitle).fontWeight(.bold).foregroundColor(Color.darkBrown)
             Spacer()
         }.padding(.top, 10)
     }
@@ -523,10 +525,10 @@ struct ClassRow: View {
                     Text("Skip")
                         .font(.subheadline).fontWeight(.medium)
                         .foregroundColor(.red)
-                        .padding(.vertical, 8).padding(.horizontal, 15)
+                        .padding(.vertical, 5).padding(.horizontal, 2)
                         .background(Color.white)
                         .overlay(
-                            Capsule().stroke(Color.red.opacity(0.4), lineWidth: 1)
+                            Capsule().stroke(Color.red.opacity(2), lineWidth: 0.25)
                         )
                         .clipShape(Capsule()) // شكل دائري كامل
                 }.buttonStyle(PlainButtonStyle())
@@ -536,10 +538,10 @@ struct ClassRow: View {
                     Text("Complete")
                         .font(.subheadline).fontWeight(.medium)
                         .foregroundColor(Color.primaryAccent) // لون النص بنفسجي
-                        .padding(.vertical, 8).padding(.horizontal, 15)
+                        .padding(.vertical, 5).padding(.horizontal, 2)
                         .background(Color.white)
                         .overlay(
-                            Capsule().stroke(Color.primaryAccent, lineWidth: 1.5)
+                            Capsule().stroke(Color.primaryAccent, lineWidth: 2.0)
                         )
                         .clipShape(Capsule()) // شكل دائري كامل
                 }.buttonStyle(PlainButtonStyle())
@@ -579,6 +581,8 @@ struct DynamicFlowerImage: View {
 
 // MARK: - 6. شاشة التقدم (StreakPage)
 
+// MARK: - 6. شاشة التقدم (StreakPage)
+
 struct StreakPage: View {
     @EnvironmentObject var appData: AppData
     
@@ -599,25 +603,43 @@ struct StreakPage: View {
             VStack(spacing: 20) {
                 Spacer(minLength: 80)
                 
-                Text("Total Classes Attended").font(.custom("Times New Roman", size: 25)).foregroundColor(Color.darkBrown).padding(.bottom, 30)
+                Text("Total Classes Attended")
+                    .font(.custom("Times New Roman", size: 25))
+                    .foregroundColor(Color.darkBrown)
+                    .padding(.bottom, 30)
                 
+                // 🚀 التصميم الجديد للدائرة والعداد 🚀
                 ZStack {
-                    Circle().fill(Color.customBackground).padding(.bottom, 30)
+                    Circle()
+                        .fill(Color.customBackground)
+                        // إضافة إطار خفيف وظل للدائرة لإبرازها
+                        .overlay(Circle().stroke(Color.darkBrown.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.darkBrown.opacity(0.2), radius: 5, x: 0, y: 0)
                     
                     // 🛑 عرض عدد الحضور الكلي مدى الحياة 🛑
-                    Text("\(appData.totalLifetimeClasses())").font(.system(size: 40, weight: .bold)).foregroundColor(Color.darkBrown).padding(.bottom, 10)
+                    Text("\(appData.totalLifetimeClasses())")
+                        .font(.system(size: 60, weight: .heavy)) // تم تكبير حجم ووزن الخط
+                        .foregroundColor(Color.darkBrown)
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, x: 1, y: 1) // إضافة ظل للرقم
                 }
-                .frame(width: 150, height: 150)
+                .frame(width: 180, height: 180) // تم زيادة حجم الدائرة لتناسب الرقم الأكبر
+                .padding(.bottom, 30)
 
-                Text("classes").font(.custom("Times New Roman", size: 25)).foregroundColor(Color.darkBrown).padding(.bottom, 50)
+                Text("classes")
+                    .font(.custom("Times New Roman", size: 25))
+                    .foregroundColor(Color.darkBrown)
+                    .padding(.bottom, 50)
                 
                 Image(flowerImageName)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: 280)
+                    // 🗑️ تم إزالة .frame(maxWidth: 280) القديمة
+                    .frame(maxWidth: 150, maxHeight: 150) // تثبيت حجم الزهرة نفسها
                     .opacity(0.9)
-                    .padding(.bottom, 20)
-                    .animation(.easeInOut(duration: 0.5), value: flowerImageName)
+                    // ✅ ضمان توسيط الزهرة في المساحة الأفقية المتبقية
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 100)
+                    .animation(.easeInOut(duration: 1.5), value: flowerImageName)
             }
             .padding(.horizontal)
             .navigationTitle("Your Streak")
@@ -626,8 +648,7 @@ struct StreakPage: View {
     }
 }
 
-
-// MARK: - 7. شاشات التقويم (AddClassesUIView)
+/// MARK: - 7. شاشات التقويم (AddClassesUIView)
 struct AddClassesUIView: View {
     @EnvironmentObject var appData: AppData
     
@@ -637,6 +658,7 @@ struct AddClassesUIView: View {
     let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
     private let calendar = Calendar.current
     
+    // 💡 تم تغيير المتغير ليعكس الخلفية الموحدة الفاتحة 💡
     private let mainBackgroundColor = Color.primaryBackground
 
     private func fetchMonthDates() -> [Date?] {
@@ -685,13 +707,15 @@ struct AddClassesUIView: View {
     var body: some View {
         ZStack(alignment: .top) {
             
+            // 💡 توحيد الخلفية العلوية والسفلية باللون الفاتح 💡
             mainBackgroundColor.edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 0) {
                 Spacer()
                     .frame(height: 125)
                 
-                Color.offWhiteBackground
+                // 💡 إزالة الخلفية السفلية الداكنة والاعتماد على خلفية الـ ZStack 💡
+                Color.primaryBackground
                     .cornerRadius(40, corners: [.topLeft, .topRight])
                     .edgesIgnoringSafeArea(.bottom)
             }
@@ -754,7 +778,8 @@ struct AddClassesUIView: View {
                             .foregroundColor(.primaryAccent)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(Color.accentBackgroundNew.opacity(0.8))
+                            // 💡 استخدام لون خلفية فاتح بديل للزر 💡
+                            .background(Color.customBackground)
                             .cornerRadius(10)
                         }
                         .opacity(appData.selectedClassDates.isEmpty ? 0 : 1)
@@ -764,6 +789,7 @@ struct AddClassesUIView: View {
                     
                 }
                 .padding(.vertical, 25)
+                // 💡 استخدام خلفية فاتحة لبطاقة التقويم 💡
                 .background(Color.customBackground)
                 .cornerRadius(30)
                 .padding(.horizontal, 20)
@@ -776,7 +802,8 @@ struct AddClassesUIView: View {
                     Text("Confirm Selection ")
                         .font(.headline)
                         .fontWeight(.bold)
-                        .foregroundColor(.offWhiteBackground)
+                        // 💡 تغيير لون النص ليتناسب مع الخلفية البنفسجية 💡
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.primaryAccent)
@@ -788,6 +815,36 @@ struct AddClassesUIView: View {
                 Spacer()
             }
             .padding(.top, 40)
+        }
+    }
+}
+
+// 💡 تم تحديث DateCell لاستخدام اللون الموحد 💡
+struct DateCell: View {
+    let date: Date
+    @Binding var selectedDates: Set<Date>
+    let toggleDateSelection: (Date) -> Void
+    let calendar: Calendar
+    
+    private var dayNumber: Int {
+        calendar.component(.day, from: date)
+    }
+    
+    private var isSelected: Bool {
+        selectedDates.contains(calendar.startOfDay(for: date))
+    }
+    
+    var body: some View {
+        Button(action: {
+            toggleDateSelection(date)
+        }) {
+            Text("\(dayNumber)").font(.body).fontWeight(.regular).frame(width: 35, height: 35)
+                .background(
+                    Group {
+                        // 💡 استخدام اللون البنفسجي كلون خلفية عند الاختيار 💡
+                        if isSelected { Circle().fill(Color.primaryAccent.opacity(0.15)) } else { EmptyView() }
+                    }
+                ).foregroundColor(isSelected ? .primaryAccent : Color(white: 0.3))
         }
     }
 }
@@ -830,34 +887,6 @@ struct MonthNavigationHeader: View {
             .foregroundColor(.faintText)
         }
         .padding(.horizontal, 15)
-    }
-}
-
-struct DateCell: View {
-    let date: Date
-    @Binding var selectedDates: Set<Date>
-    let toggleDateSelection: (Date) -> Void
-    let calendar: Calendar
-    
-    private var dayNumber: Int {
-        calendar.component(.day, from: date)
-    }
-    
-    private var isSelected: Bool {
-        selectedDates.contains(calendar.startOfDay(for: date))
-    }
-    
-    var body: some View {
-        Button(action: {
-            toggleDateSelection(date)
-        }) {
-            Text("\(dayNumber)").font(.body).fontWeight(.regular).frame(width: 35, height: 35)
-                .background(
-                    Group {
-                        if isSelected { Circle().fill(Color.accentBackgroundNew) } else { EmptyView() }
-                    }
-                ).foregroundColor(isSelected ? .primaryAccent : Color(white: 0.3))
-        }
     }
 }
 
