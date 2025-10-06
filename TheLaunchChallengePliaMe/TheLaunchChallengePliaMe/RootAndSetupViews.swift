@@ -137,6 +137,7 @@ struct BottomContentLayer: View {
 // MARK: - LevelSelectionView
 
 struct LevelSelectionView: View {
+    // تم استخدام @AppStorage للحالة المخزنة، وسنقوم بمسحها عند الظهور.
     @AppStorage("selectedLevel") private var selectedLevel = ""
     private let backgroundColor = Color.primaryBackground
     private let imageSize: CGFloat = 115
@@ -161,9 +162,9 @@ struct LevelSelectionView: View {
                 }.disabled(selectedLevel.isEmpty).opacity(selectedLevel.isEmpty ? 0.4 : 1.0)
             }
         }
-        // 💡 التعديل الذي يحل المشكلة: مسح الاختيار عند ظهور الشاشة
+        // **التعديل رقم 1:** مسح الاختيار عند ظهور الشاشة لضمان عدم وجود اختيار افتراضي
         .onAppear {
-             selectedLevel = ""
+            selectedLevel = ""
         }
         .padding(24).background(backgroundColor.ignoresSafeArea())
     }
@@ -172,11 +173,11 @@ struct LevelSelectionView: View {
 // MARK: - ObjectiveSelectionView
 
 struct ObjectiveSelectionView: View {
-    @AppStorage("selectedObjective") private var selectedObjective = ""
-    // تم إزالة @AppStorage("hasCompletedSetup")
+    // **التعديل رقم 2:** تم تغيير @AppStorage إلى @State لكي لا يتم حفظ القيمة بشكل افتراضي
+    @State private var selectedObjective = ""
     let level: String
     private let backgroundColor = Color.primaryBackground
-    private let imageSize:  CGFloat = 115
+    private let imageSize: CGFloat = 115
     private let imageRightPadding: CGFloat = 12
 
     var body: some View {
@@ -192,7 +193,6 @@ struct ObjectiveSelectionView: View {
                 NavigationLink { MainAppTabsView(userLevel: level, userObjective: selectedObjective) } label: {
                     Image(systemName: "arrow.right").font(.system(size: 22, weight: .bold)).foregroundStyle(.black).padding(14).background(Color.white).clipShape(Circle()).shadow(color: .black.opacity(0.15), radius: 6, y: 3)
                 }.disabled(selectedObjective.isEmpty).opacity(selectedObjective.isEmpty ? 0.4 : 1.0)
-                // تم إزالة .simultaneousGesture
             }
         }.padding(24).background(backgroundColor.ignoresSafeArea())
     }

@@ -25,7 +25,7 @@ struct MainAppTabsView: View {
                 .tabItem { Label("Home", systemImage: "house.fill") }.tag(0)
             
             // شاشة إضافة الكلاسات (التاب الثاني)
-            AddClassesUIView()
+            CalendarViews()
                 .tabItem { Label("Calendar", systemImage: "calendar.badge.plus") }.tag(1) // تم تغيير الاسم إلى Calendar
         }
         .navigationBarBackButtonHidden(true)
