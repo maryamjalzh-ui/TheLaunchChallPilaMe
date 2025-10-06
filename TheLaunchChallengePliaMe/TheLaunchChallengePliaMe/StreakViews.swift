@@ -1,8 +1,8 @@
 //
-//  StreakViews.swift
-//  TheLaunchChallengePliaMe
+//  StreakViews.swift
+//  TheLaunchChallengePliaMe
 //
-//  Created by lamess on 14/04/1447 AH.
+//  Created by lamess on 14/04/1447 AH.
 //
 
 // MARK: - 5. StreakViews.swift
@@ -12,36 +12,29 @@ import SwiftUI
 struct DynamicFlowerImage: View {
     @EnvironmentObject var appData: AppData
     
-    // 🚀 الإزاحة الأفقية الوحيدة التي تحتاجها
+    // متغير حالة للتحكم في تأثير النبض
+    @State private var pulse: Bool = false
+    
     let horizontalOffset: CGFloat = 15
 
     // --- الدوال المساعدة للحجم والاسم (لم تتغير) ---
-    
     private func sizeForStreak(completed: Int) -> CGFloat {
-            
-            // 1. 🚨 تم خفض الحجم الأساسي لـ flower1 ليصبح أصغر 🚨
-            let baseSize: CGFloat = 130
-            
-            // 2. 🚀 تم زيادة الفارق لتصبح flower2 أكبر بـ 30 نقطة 🚀
-            let sizeIncrement: CGFloat = 50
+        let baseSize: CGFloat = 130
+        let sizeIncrement: CGFloat = 50
 
-            if completed >= 15 {
-                // Flower 4
-                return baseSize + (sizeIncrement * 4) // 180 + 120 = 300
-            }
-            else if completed >= 10 {
-                // Flower 3
-                return baseSize + (sizeIncrement * 2) // 180 + 60 = 240
-            }
-            else if completed >= 5 {
-                // Flower 2 (أكبر بشكل واضح من flower1)
-                return baseSize + sizeIncrement // 180 + 30 = 210
-            }
-            else {
-                // Flower 1
-                return baseSize // 180
-            }
+        if completed >= 15 {
+            return baseSize + (sizeIncrement * 4) // Flower 4: 330
         }
+        else if completed >= 10 {
+            return baseSize + (sizeIncrement * 2) // Flower 3: 230
+        }
+        else if completed >= 5 {
+            return baseSize + sizeIncrement // Flower 2: 180
+        }
+        else {
+            return baseSize // Flower 1: 130
+        }
+    }
     
     private var flowerImageName: String {
         let completed = appData.classesCompletedStreak
@@ -62,25 +55,34 @@ struct DynamicFlowerImage: View {
             .resizable()
             .scaledToFit()
             
-            // 1. تثبيت الأبعاد الموحدة
+            // 1. تطبيق الحجم الأصلي
             .frame(width: currentSize, height: currentSize)
             
-            // 2. 🚨 التعديل الرئيسي: تثبيت الأبعاد النهائية للحاوية 🚨
-            // نستخدم هذا الإطار لتثبيت المساحة التي تشغلها الوردة بالكامل (على سبيل المثال 350x350)
+            // 🟢 التعديل: زيادة مدى النبض لجعله أوضح (1.0 إلى 1.15) 🟢
+            .scaleEffect(pulse ? 1.15 : 1.0)
+            
+            // 2. تثبيت الأبعاد النهائية للحاوية
             .frame(width: 350, height: 350)
-            .contentShape(Rectangle()) // تثبيت مساحة التفاعل
-            .clipped() // لضمان عدم خروج أي جزء من الصورة عن هذا الإطار
+            .contentShape(Rectangle())
+            .clipped()
             
             .opacity(0.7)
-            .animation(.easeInOut(duration: 0.5), value: name)
-            .animation(.easeInOut(duration: 0.5), value: currentSize)
-        
-        // 3. التوسيط على مستوى الشاشة
-        .frame(maxWidth: .infinity, alignment: .center)
-        
-        // 4. 🚀 الإزاحة الأفقية فقط (إذا كانت مطلوبة) 🚀
-        // قد تحتاج إلى تعديل (Y: -30) لرفع الكتلة للأعلى لتعويض الـ Padding الذي أزلناه
-        .offset(x: horizontalOffset, y: -40)
+            .animation(.easeInOut(duration: 0.1), value: currentSize)
+            .animation(.easeInOut(duration: 0.1), value: name)
+            
+            
+            // 3. التوسيط على مستوى الشاشة
+            .frame(maxWidth: 350, alignment: .center)
+            
+            // 4. الإزاحة
+            .offset(x: horizontalOffset, y: -40)
+            
+            // السرعة: 3.0 ثوانٍ (كما هي)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    pulse.toggle()
+                }
+            }
     }
 }
 
@@ -89,16 +91,14 @@ struct DynamicFlowerImage: View {
 struct StreakPage: View {
     @EnvironmentObject var appData: AppData
     
-    // 🚀 الإزاحة الأفقية الوحيدة التي تحتاجها
     let horizontalOffset: CGFloat = 15
-    
-    // 🚨 الإزاحة العمودية الثابتة لرفع الكتلة للأعلى لتعويض الـ Padding الذي أزلناه 🚨
     let verticalOffsetCorrection: CGFloat = 40
 
-    // --- الدوال المساعدة للحجم والاسم (من الكود النهائي) ---
+    // متغير حالة للتحكم في تأثير النبض
+    @State private var pulse: Bool = false
     
+    // --- الدوال المساعدة للحجم والاسم (لم تتغير) ---
     private func sizeForStreak(completed: Int) -> CGFloat {
-        // baseSize: 130, sizeIncrement: 50
         let baseSize: CGFloat = 130
         let sizeIncrement: CGFloat = 50
 
@@ -129,7 +129,6 @@ struct StreakPage: View {
     // --- الجسم (Body) المُحدَّث ---
     var body: some View {
         
-        // حساب الحجم الحالي في بداية الـ body
         let currentSize = sizeForStreak(completed: appData.classesCompletedStreak)
         let name = flowerImageName
         
@@ -164,7 +163,7 @@ struct StreakPage: View {
                     .foregroundColor(Color.darkBrown)
                     .padding(.bottom, 50)
                 
-                // 🌸 الصورة مع التعديل لتطبيق الأحجام الديناميكية وثبات الموقع 🌸
+                // 🌸 الصورة مع التعديل 🌸
                 Image(name)
                     .resizable()
                     .scaledToFit()
@@ -172,20 +171,30 @@ struct StreakPage: View {
                     // 1. تطبيق الحجم الديناميكي الجديد
                     .frame(width: currentSize, height: currentSize)
                     
-                    // 2. تثبيت الحاوية (مهم جداً لثبات الموقع لـ flower4)
+                    // 🟢 التعديل: زيادة مدى النبض لجعله أوضح (1.0 إلى 1.15) 🟢
+                    .scaleEffect(pulse ? 1.15 : 1.0)
+                    
+                    // 2. تثبيت الحاوية
                     .frame(width: 350, height: 350)
                     .contentShape(Rectangle())
                     .clipped()
                     
                     .opacity(0.7)
-                    .animation(.easeInOut(duration: 0.5), value: name)
-                    .animation(.easeInOut(duration: 0.5), value: currentSize)
+                    .animation(.easeInOut(duration: 0.1), value: name)
+                    .animation(.easeInOut(duration: 0.1), value: currentSize)
                     
                     // 3. التوسيط على مستوى الشاشة
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(maxWidth: 350, alignment: .center)
                     
-                    // 4. تطبيق الإزاحة النهائية (الأفقية والعمودية)
+                    // 4. تطبيق الإزاحة
                     .offset(x: horizontalOffset, y: -verticalOffsetCorrection)
+                    
+                    // السرعة: 3.0 ثوانٍ (كما هي)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                            pulse.toggle()
+                        }
+                    }
                 
                 Spacer()
             }

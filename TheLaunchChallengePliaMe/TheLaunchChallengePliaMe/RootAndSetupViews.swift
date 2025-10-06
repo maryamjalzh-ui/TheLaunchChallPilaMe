@@ -1,8 +1,8 @@
 //
-//  RootAndSetupViews.swift
-//  TheLaunchChallengePliaMe
+//  RootAndSetupViews.swift
+//  TheLaunchChallengePliaMe
 //
-//  Created by lamess on 14/04/1447 AH.
+//  Created by lamess on 14/04/1447 AH.
 //
 
 // MARK: - 3. RootAndSetupViews.swift
@@ -13,13 +13,9 @@ import SwiftUI
 
 struct MainAppRootView: View {
     @StateObject var appData = AppData()
-    // تم إزالة @AppStorage("hasCompletedSetup")
     
-    // لتعيين لون سهم العودة (Arrow Back)
-    init() {
-        UINavigationBar.appearance().tintColor = UIColor.black // تعيين لون الأسهم في NavigationStack إلى الأسود
-    }
-    
+    // تم إزالة init() لأننا سنزيل زر العودة التلقائي
+
     var body: some View {
         NavigationStack {
             SplashScreenUIView()
@@ -137,7 +133,8 @@ struct BottomContentLayer: View {
 // MARK: - LevelSelectionView
 
 struct LevelSelectionView: View {
-    // تم استخدام @AppStorage للحالة المخزنة، وسنقوم بمسحها عند الظهور.
+    @Environment(\.dismiss) var dismiss // لاستخدام زر العودة المخصص
+    
     @AppStorage("selectedLevel") private var selectedLevel = ""
     private let backgroundColor = Color.primaryBackground
     private let imageSize: CGFloat = 115
@@ -145,24 +142,59 @@ struct LevelSelectionView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Text("Your Level").font(.system(.largeTitle, design: .serif)).navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            Text("Your Level")
+                .font(.system(.largeTitle, design: .serif))
+                .navigationTitle("")
+                // 🛑 إخفاء زر العودة التلقائي من الأعلى 🛑
+                .navigationBarBackButtonHidden(true)
+                .navigationBarTitleDisplayMode(.inline)
             
-            baseCard(title: "Flow Easy", isSelected: selectedLevel == "Flow Easy", onTap: { selectedLevel = "Flow Easy" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("flow").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
-            baseCard(title: "Core Active", isSelected: selectedLevel == "Core Active", onTap: { selectedLevel = "Core Active" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("core").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
-            baseCard(title: "Power Sculpt", isSelected: selectedLevel == "Power Sculpt", onTap: { selectedLevel = "Power Sculpt" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("power").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
+            baseCard(title: "Flow Easy", isSelected: selectedLevel == "Flow Easy", onTap: { selectedLevel = "Flow Easy" }, extraRightPadding: imageSize + imageRightPadding)
+                .overlay(Image("flow").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing)
+                .padding(.trailing, imageRightPadding)
+            
+            baseCard(title: "Core Active", isSelected: selectedLevel == "Core Active", onTap: { selectedLevel = "Core Active" }, extraRightPadding: imageSize + imageRightPadding)
+                .overlay(Image("core").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing)
+                .padding(.trailing, imageRightPadding)
+            
+            baseCard(title: "Power Sculpt", isSelected: selectedLevel == "Power Sculpt", onTap: { selectedLevel = "Power Sculpt" }, extraRightPadding: imageSize + imageRightPadding)
+                .overlay(Image("power").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing)
+                .padding(.trailing, imageRightPadding)
 
             Spacer()
 
             HStack {
-                Spacer()
+                // 🟢 زر العودة المخصص (Custom Back Button) 🟢
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.black)
+                        .padding(14)
+                        .background(Color(white: 0.9)) // نفس لون زر التقدم الأغمق
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+                }
+                
+                Spacer() // لفصل زر العودة عن زر التقدم
+                
+                // زر التقدم التالي (Next Button)
                 NavigationLink {
                     ObjectiveSelectionView(level: selectedLevel)
                 } label: {
-                    Image(systemName: "arrow.right").font(.system(size: 22, weight: .bold)).foregroundStyle(.black).padding(14).background(Color.white).clipShape(Circle()).shadow(color: .black.opacity(0.15), radius: 6, y: 3)
-                }.disabled(selectedLevel.isEmpty).opacity(selectedLevel.isEmpty ? 0.4 : 1.0)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.black)
+                        .padding(14)
+                        .background(Color(white: 0.9)) // تم تغميقه قليلاً في الرد السابق
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+                }
+                .disabled(selectedLevel.isEmpty)
+                .opacity(selectedLevel.isEmpty ? 0.4 : 1.0)
             }
         }
-        // **التعديل رقم 1:** مسح الاختيار عند ظهور الشاشة لضمان عدم وجود اختيار افتراضي
         .onAppear {
             selectedLevel = ""
         }
@@ -173,7 +205,8 @@ struct LevelSelectionView: View {
 // MARK: - ObjectiveSelectionView
 
 struct ObjectiveSelectionView: View {
-    // **التعديل رقم 2:** تم تغيير @AppStorage إلى @State لكي لا يتم حفظ القيمة بشكل افتراضي
+    @Environment(\.dismiss) var dismiss // لاستخدام زر العودة المخصص
+    
     @State private var selectedObjective = ""
     let level: String
     private let backgroundColor = Color.primaryBackground
@@ -182,18 +215,59 @@ struct ObjectiveSelectionView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Text("Your Objective").font(.system(.largeTitle, design: .serif)).navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            Text("Your Objective")
+                .font(.system(.largeTitle, design: .serif))
+                .navigationTitle("")
+                // 🛑 إخفاء زر العودة التلقائي من الأعلى 🛑
+                .navigationBarBackButtonHidden(true)
+                .navigationBarTitleDisplayMode(.inline)
 
-            baseCard(title: "Physical", isSelected: selectedObjective == "Physical", onTap: { selectedObjective = "Physical" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("physical").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
-            baseCard(title: "Mental", isSelected: selectedObjective == "Mental", onTap: { selectedObjective = "Mental" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("mental").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
-            baseCard(title: "Both", isSelected: selectedObjective == "Both", onTap: { selectedObjective = "Both" }, extraRightPadding: imageSize + imageRightPadding).overlay(Image("both").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing).padding(.trailing, imageRightPadding)
+            baseCard(title: "Physical", isSelected: selectedObjective == "Physical", onTap: { selectedObjective = "Physical" }, extraRightPadding: imageSize + imageRightPadding)
+                .overlay(Image("physical").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing)
+                .padding(.trailing, imageRightPadding)
+            
+            baseCard(title: "Mental", isSelected: selectedObjective == "Mental", onTap: { selectedObjective = "Mental" }, extraRightPadding: imageSize + imageRightPadding)
+                .overlay(Image("mental").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing)
+                .padding(.trailing, imageRightPadding)
+            
+            baseCard(title: "Both", isSelected: selectedObjective == "Both", onTap: { selectedObjective = "Both" }, extraRightPadding: imageSize + imageRightPadding)
+                .overlay(Image("both").resizable().scaledToFit().frame(width: imageSize, height: imageSize), alignment: .trailing)
+                .padding(.trailing, imageRightPadding)
 
             Spacer()
-            HStack { Spacer()
-                NavigationLink { MainAppTabsView(userLevel: level, userObjective: selectedObjective) } label: {
-                    Image(systemName: "arrow.right").font(.system(size: 22, weight: .bold)).foregroundStyle(.black).padding(14).background(Color.white).clipShape(Circle()).shadow(color: .black.opacity(0.15), radius: 6, y: 3)
-                }.disabled(selectedObjective.isEmpty).opacity(selectedObjective.isEmpty ? 0.4 : 1.0)
+            
+            HStack {
+                // 🟢 زر العودة المخصص (Custom Back Button) 🟢
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.black)
+                        .padding(14)
+                        .background(Color(white: 0.9))
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+                }
+                
+                Spacer()
+                
+                // زر التقدم التالي (Next Button)
+                NavigationLink {
+                    MainAppTabsView(userLevel: level, userObjective: selectedObjective)
+                } label: {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.black)
+                        .padding(14)
+                        .background(Color(white: 0.9)) // تم تغميقه قليلاً في الرد السابق
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+                }
+                .disabled(selectedObjective.isEmpty)
+                .opacity(selectedObjective.isEmpty ? 0.4 : 1.0)
             }
-        }.padding(24).background(backgroundColor.ignoresSafeArea())
+        }
+        .padding(24).background(backgroundColor.ignoresSafeArea())
     }
 }

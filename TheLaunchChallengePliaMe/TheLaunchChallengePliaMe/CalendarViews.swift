@@ -164,10 +164,30 @@ struct CalendarViews: View {
                 .padding(.horizontal, 20)
                 .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 10)
                 
-                Button(action: {
-                    appData.updateCountsFromSelection()
-                    print("Selected Classes confirmed: \(appData.selectedClassDates.count)")
-                }) {
+                //                Button(action: {
+                //                    appData.updateCountsFromSelection()
+                //                    print("Selected Classes confirmed: \(appData.selectedClassDates.count)")
+                //                }) {
+                //                    Text("Confirm Selection ")
+                //                        .font(.headline)
+                //                        .fontWeight(.bold)
+                //                        .foregroundColor(.white)
+                //                        .frame(maxWidth: .infinity)
+                //                        .padding()
+                //                        .background(Color.primaryAccent)
+                //                        .cornerRadius(15)
+                //                        .shadow(color: Color.primaryAccent.opacity(0.4), radius: 8, x: 0, y: 5)
+                //                }
+                //                .padding(.horizontal, 20)
+                //                Spacer()
+                //            }
+                //            .padding(.top, 40)
+                //        }
+                //        .navigationBarHidden(true)
+                //    }
+                //}
+                NavigationLink(destination: MainAppTabsView(userLevel: "", userObjective: "")) {
+                    // الـ Action يجب أن يتم داخل الـ Button Label قبل الانتقال
                     Text("Confirm Selection ")
                         .font(.headline)
                         .fontWeight(.bold)
@@ -178,109 +198,115 @@ struct CalendarViews: View {
                         .cornerRadius(15)
                         .shadow(color: Color.primaryAccent.opacity(0.4), radius: 8, x: 0, y: 5)
                 }
+                // تنفيذ الـ Action قبل الانتقال
+                .simultaneousGesture(TapGesture().onEnded {
+                    appData.updateCountsFromSelection()
+                    print("Selected Classes confirmed: \(appData.selectedClassDates.count)")
+                })
                 .padding(.horizontal, 20)
+                
                 Spacer()
             }
             .padding(.top, 40)
         }
         .navigationBarHidden(true)
     }
-}
-
-// MARK: - مكونات التقويم (Calendar Components)
-
-// تم إعادة DateCell إلى تصميم الكود الأول مع إضافة منطق isAttended و isInPast
-struct DateCell: View {
-    let date: Date
-    @Binding var selectedDates: Set<Date>
-    let attendedDates: Set<Date>
-    let toggleDateSelection: (Date) -> Void
-    let calendar: Calendar
     
-    private var dayNumber: Int {
-        calendar.component(.day, from: date)
-    }
+    // MARK: - مكونات التقويم (Calendar Components)
     
-    private var isSelected: Bool {
-        selectedDates.contains(calendar.startOfDay(for: date))
-    }
-    
-    private var isAttended: Bool {
-        attendedDates.contains(calendar.startOfDay(for: date))
-    }
-    
-    private var isInPast: Bool {
-        date < calendar.startOfDay(for: Date()) && !calendar.isDateInToday(date)
-    }
-    
-    private var isDisabled: Bool {
-        isAttended || isInPast
-    }
-    
-    var body: some View {
-        Button(action: { toggleDateSelection(date) }) {
-            Text("\(dayNumber)")
-                .font(.body)
-                .fontWeight(.regular)
-                .frame(width: 35, height: 35)
-                // تصميم الخلفية الأصلي (الكود الأول)
-                .background(
-                    Group {
-                        // عند الحضور نستخدم دائرة بلون أغمق كدليل واضح
-                        if isAttended {
-                             Circle().fill(Color.primaryAccent)
-                        } else if isSelected {
-                            // اللون الأصلي عند التحديد
-                            Circle().fill(Color.primaryAccent.opacity(0.15))
-                        } else {
-                            EmptyView()
-                        }
-                    }
-                )
-                // تعديل لون النص للحفاظ على التصميم والوضوح
-                .foregroundColor(
-                    isAttended ? .white : // التواريخ المحضورة باللون الأبيض
-                    (isInPast ? Color(white: 0.3).opacity(0.4) : // التواريخ الماضية باهتة
-                    (isSelected ? .primaryAccent : Color(white: 0.3))) // التواريخ المحددة/الافتراضية
-                )
+    // تم إعادة DateCell إلى تصميم الكود الأول مع إضافة منطق isAttended و isInPast
+    struct DateCell: View {
+        let date: Date
+        @Binding var selectedDates: Set<Date>
+        let attendedDates: Set<Date>
+        let toggleDateSelection: (Date) -> Void
+        let calendar: Calendar
+        
+        private var dayNumber: Int {
+            calendar.component(.day, from: date)
         }
-        .disabled(isDisabled)
-    }
-}
-
-struct MonthNavigationHeader: View {
-    @Binding var currentMonth: Date
-    let changeMonth: (Int) -> Void
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter
-    }()
-    
-    var body: some View {
-        HStack {
-            HStack(spacing: 4) {
-                Text(dateFormatter.string(from: currentMonth))
-                    .font(.headline)
-                    .foregroundColor(.primaryAccent)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.primaryAccent.opacity(0.4), lineWidth: 1)
-                            .padding(-4)
+        
+        private var isSelected: Bool {
+            selectedDates.contains(calendar.startOfDay(for: date))
+        }
+        
+        private var isAttended: Bool {
+            attendedDates.contains(calendar.startOfDay(for: date))
+        }
+        
+        private var isInPast: Bool {
+            date < calendar.startOfDay(for: Date()) && !calendar.isDateInToday(date)
+        }
+        
+        private var isDisabled: Bool {
+            isAttended || isInPast
+        }
+        
+        var body: some View {
+            Button(action: { toggleDateSelection(date) }) {
+                Text("\(dayNumber)")
+                    .font(.body)
+                    .fontWeight(.regular)
+                    .frame(width: 35, height: 35)
+                // تصميم الخلفية الأصلي (الكود الأول)
+                    .background(
+                        Group {
+                            // عند الحضور نستخدم دائرة بلون أغمق كدليل واضح
+                            if isAttended {
+                                Circle().fill(Color.primaryAccent)
+                            } else if isSelected {
+                                // اللون الأصلي عند التحديد
+                                Circle().fill(Color.primaryAccent.opacity(0.15))
+                            } else {
+                                EmptyView()
+                            }
+                        }
+                    )
+                // تعديل لون النص للحفاظ على التصميم والوضوح
+                    .foregroundColor(
+                        isAttended ? .white : // التواريخ المحضورة باللون الأبيض
+                        (isInPast ? Color(white: 0.3).opacity(0.4) : // التواريخ الماضية باهتة
+                         (isSelected ? .primaryAccent : Color(white: 0.3))) // التواريخ المحددة/الافتراضية
                     )
             }
-            Spacer()
-            HStack(spacing: 15) {
-                Button(action: { changeMonth(-1) }) {
-                    Image(systemName: "chevron.left")
-                }
-                Button(action: { changeMonth(1) }) {
-                    Image(systemName: "chevron.right")
-                }
-            }
-            .font(.title3)
-            .foregroundColor(.faintText)
+            .disabled(isDisabled)
         }
-        .padding(.horizontal, 15)
+    }
+    
+    struct MonthNavigationHeader: View {
+        @Binding var currentMonth: Date
+        let changeMonth: (Int) -> Void
+        private let dateFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter
+        }()
+        
+        var body: some View {
+            HStack {
+                HStack(spacing: 4) {
+                    Text(dateFormatter.string(from: currentMonth))
+                        .font(.headline)
+                        .foregroundColor(.primaryAccent)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(Color.primaryAccent.opacity(0.4), lineWidth: 1)
+                                .padding(-4)
+                        )
+                }
+                Spacer()
+                HStack(spacing: 15) {
+                    Button(action: { changeMonth(-1) }) {
+                        Image(systemName: "chevron.left")
+                    }
+                    Button(action: { changeMonth(1) }) {
+                        Image(systemName: "chevron.right")
+                    }
+                }
+                .font(.title3)
+                .foregroundColor(.faintText)
+            }
+            .padding(.horizontal, 15)
+        }
     }
 }

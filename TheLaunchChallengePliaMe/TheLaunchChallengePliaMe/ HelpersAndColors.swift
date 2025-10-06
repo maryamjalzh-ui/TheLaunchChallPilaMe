@@ -1,11 +1,9 @@
 //
-//   HelpersAndColors.swift
-//  TheLaunchChallengePliaMe
+//   HelpersAndColors.swift
+// TheLaunchChallengePliaMe
 //
-//  Created by lamess on 14/04/1447 AH.
+// Created by lamess on 14/04/1447 AH.
 //
-// MARK: - 2. HelpersAndColors.swift
-
 // MARK: - 2. HelpersAndColors.swift
 
 import SwiftUI
@@ -52,7 +50,8 @@ struct RoundedCornerShape: Shape {
 
 @ViewBuilder
 func baseCard(title: String, isSelected: Bool, onTap: @escaping () -> Void, extraRightPadding: CGFloat) -> some View {
-    let cardColor = Color(hex: "FFF7E6")
+    // 🟢 التعديل: تم تغيير اللون من "FFF7E6" إلى "F0E0C8" ليصبح أغمق قليلاً 🟢
+    let cardColor = Color(hex: "F0E0C8")
     let cardHeight: CGFloat = 100
     
     HStack { Text(title).font(.headline).foregroundStyle(.black); Spacer(minLength: 0) }
