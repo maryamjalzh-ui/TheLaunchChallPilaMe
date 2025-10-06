@@ -1,10 +1,3 @@
-//
-//  MainAppViews.swift
-//  TheLaunchChallengePliaMe
-//
-//  Created by lamess on 14/04/1447 AH.
-//
-
 // MARK: - 4. MainAppViews.swift
 
 import SwiftUI
@@ -25,8 +18,9 @@ struct MainAppTabsView: View {
                 .tabItem { Label("Home", systemImage: "house.fill") }.tag(0)
             
             // شاشة إضافة الكلاسات (التاب الثاني)
-            CalendarViews()
-                .tabItem { Label("Calendar", systemImage: "calendar.badge.plus") }.tag(1) // تم تغيير الاسم إلى Calendar
+            // 🛑 التعديل هنا: تمرير Binding للـ selectedTab
+            CalendarViews(selectedTab: $selectedTab)
+                .tabItem { Label("Calendar", systemImage: "calendar.badge.plus") }.tag(1)
         }
         .navigationBarBackButtonHidden(true)
     }

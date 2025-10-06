@@ -4,6 +4,10 @@ import SwiftUI
 /// MARK: - شاشات التقويم (AddClassesUIView)
 struct CalendarViews: View {
     @EnvironmentObject var appData: AppData
+    // 🟢 التعديل 1: إضافة Binding لاستقبال قيمة التاب المختار من MainAppTabsView
+    @Binding var selectedTab: Int
+    // تم حذف @Environment(\.dismiss) var dismiss
+    
     @State private var currentMonth: Date = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
     
     let daysOfWeek: [String] = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
@@ -164,30 +168,15 @@ struct CalendarViews: View {
                 .padding(.horizontal, 20)
                 .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 10)
                 
-                //                Button(action: {
-                //                    appData.updateCountsFromSelection()
-                //                    print("Selected Classes confirmed: \(appData.selectedClassDates.count)")
-                //                }) {
-                //                    Text("Confirm Selection ")
-                //                        .font(.headline)
-                //                        .fontWeight(.bold)
-                //                        .foregroundColor(.white)
-                //                        .frame(maxWidth: .infinity)
-                //                        .padding()
-                //                        .background(Color.primaryAccent)
-                //                        .cornerRadius(15)
-                //                        .shadow(color: Color.primaryAccent.opacity(0.4), radius: 8, x: 0, y: 5)
-                //                }
-                //                .padding(.horizontal, 20)
-                //                Spacer()
-                //            }
-                //            .padding(.top, 40)
-                //        }
-                //        .navigationBarHidden(true)
-                //    }
-                //}
-                NavigationLink(destination: MainAppTabsView(userLevel: "", userObjective: "")) {
-                    // الـ Action يجب أن يتم داخل الـ Button Label قبل الانتقال
+                // 🛑 التعديل الرئيسي: تحويل الزر إلى تبديل التاب إلى Home (Tag 0) 🛑
+                Button(action: {
+                    // 1. تنفيذ الإجراء المطلوب
+                    appData.updateCountsFromSelection()
+                    print("Selected Classes confirmed: \(appData.selectedClassDates.count)")
+                    
+                    // 2. تغيير التاب إلى Home (Tag 0)
+                    selectedTab = 0
+                }) {
                     Text("Confirm Selection ")
                         .font(.headline)
                         .fontWeight(.bold)
@@ -198,11 +187,6 @@ struct CalendarViews: View {
                         .cornerRadius(15)
                         .shadow(color: Color.primaryAccent.opacity(0.4), radius: 8, x: 0, y: 5)
                 }
-                // تنفيذ الـ Action قبل الانتقال
-                .simultaneousGesture(TapGesture().onEnded {
-                    appData.updateCountsFromSelection()
-                    print("Selected Classes confirmed: \(appData.selectedClassDates.count)")
-                })
                 .padding(.horizontal, 20)
                 
                 Spacer()
@@ -266,7 +250,7 @@ struct CalendarViews: View {
                     .foregroundColor(
                         isAttended ? .white : // التواريخ المحضورة باللون الأبيض
                         (isInPast ? Color(white: 0.3).opacity(0.4) : // التواريخ الماضية باهتة
-                         (isSelected ? .primaryAccent : Color(white: 0.3))) // التواريخ المحددة/الافتراضية
+                        (isSelected ? .primaryAccent : Color(white: 0.3))) // التواريخ المحددة/الافتراضية
                     )
             }
             .disabled(isDisabled)
